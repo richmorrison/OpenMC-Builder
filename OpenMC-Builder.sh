@@ -36,7 +36,7 @@ LibMeshlink=https://github.com/libMesh/libmesh.git
 LibMeshtag=v1.7.0
 
 OpenMClink=https://github.com/openmc-dev/openmc.git
-OpenMCtag=v0.13.0
+OpenMCtag=v0.13.1
 
 nuclear_data_links=(
   https://anl.box.com/shared/static/9igk353zpy8fn9ttvtrqgzvw1vtejoz6.xz
@@ -191,11 +191,11 @@ mkdir -p ${OpenMCdir_build_parallel}
 cd ${zlibdir_build}
 
 ${zlibdir_src}/configure --prefix=${compile_out_serial}
-make -j${jobs}
+make -j1
 make install
 
 ${zlibdir_src}/configure --prefix=${compile_out_parallel}
-make -j${jobs}
+make -j1
 make install
 
 ###############################################################
@@ -356,12 +356,12 @@ git checkout tags/${OpenMCtag}
 git submodule update --init --recursive
 
 cd ${OpenMCdir_build}
-cmake ${OpenMCdir_src} -DHDF5_PREFER_PARALLEL=off -Ddagmc=on -Dlibmesh=on -Dopenmp=on -DCMAKE_PREFIX_PATH=${compile_out_serial} -DCMAKE_INSTALL_PREFIX=${compile_out_serial}
+cmake ${OpenMCdir_src} -DHDF5_PREFER_PARALLEL=off -DOPENMC_USE_DAGMC=on -DOPENMC_USE_LIBMESH=on -DOPENMC_USE_OPENMP=on -DCMAKE_PREFIX_PATH=${compile_out_serial} -DCMAKE_INSTALL_PREFIX=${compile_out_serial}
 make -j${jobs}
 make install
 
 cd ${OpenMCdir_build_parallel}
-cmake ${OpenMCdir_src} -DHDF5_PREFER_PARALLEL=on -DCMAKE_CXX_COMPILER=${compile_out_parallel}/bin/mpicxx -Ddagmc=on -Dlibmesh=on -Dopenmp=on -DCMAKE_PREFIX_PATH=${compile_out_parallel} -DCMAKE_INSTALL_PREFIX=${compile_out_parallel}
+cmake ${OpenMCdir_src} -DHDF5_PREFER_PARALLEL=on -DCMAKE_CXX_COMPILER=${compile_out_parallel}/bin/mpicxx -DOPENMC_USE_DAGMC=on -DOPENMC_USE_LIBMESH=on -DOPENMC_USE_OPENMP=on -DOPENMC_USE_MPI=on -DCMAKE_PREFIX_PATH=${compile_out_parallel} -DCMAKE_INSTALL_PREFIX=${compile_out_parallel}
 make -j${jobs}
 make install
 
