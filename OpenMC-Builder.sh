@@ -17,17 +17,17 @@ Zliblink=https://zlib.net/fossils/zlib-1.2.13.tar.gz
 LibAEClink=https://gitlab.dkrz.de/k202009/libaec.git
 LibAECtag=v1.0.6
 
-LibPNGlink=https://download.sourceforge.net/libpng/libpng-1.6.39.tar.gz
+LibPNGlink=https://download.sourceforge.net/libpng/libpng-1.6.40.tar.gz
 
-MPICHlink=https://www.mpich.org/static/downloads/4.1.1/mpich-4.1.1.tar.gz
+MPICHlink=https://www.mpich.org/static/downloads/4.1.2/mpich-4.1.2.tar.gz
 
-HDF5link=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.0/src/hdf5-1.14.0.tar.gz
+HDF5link=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.1/src/hdf5-1.14.1-2.tar.gz
 
 Eigen3link=https://gitlab.com/libeigen/eigen.git
 Eigen3tag=3.4.0
 
 MOABlink=https://bitbucket.org/fathomteam/moab.git
-MOABtag=5.4.1
+MOABtag=5.5.0
 
 DAGMClink=https://github.com/svalinn/DAGMC.git
 DAGMCtag=v3.2.2
@@ -36,7 +36,7 @@ LibMeshlink=https://github.com/libMesh/libmesh.git
 LibMeshtag=v1.7.1
 
 OpenMClink=https://github.com/openmc-dev/openmc.git
-OpenMCtag=v0.13.2
+OpenMCtag=v0.13.3
 
 nuclear_data_links=(
   https://anl.box.com/shared/static/9igk353zpy8fn9ttvtrqgzvw1vtejoz6.xz
