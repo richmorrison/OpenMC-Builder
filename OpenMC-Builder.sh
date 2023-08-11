@@ -209,11 +209,11 @@ git checkout tags/${LibAECtag}
 
 cd ${libaecdir_build}
 
-cmake -j${jobs} ${libaecdir_src} -DCMAKE_INSTALL_PREFIX=${compile_out_serial}
+cmake ${libaecdir_src} -DCMAKE_INSTALL_PREFIX=${compile_out_serial}
 make -j${jobs}
 make install
 
-cmake -j${jobs} ${libaecdir_src} -DCMAKE_INSTALL_PREFIX=${compile_out_parallel}
+cmake ${libaecdir_src} -DCMAKE_INSTALL_PREFIX=${compile_out_parallel}
 make -j${jobs}
 make install
 
