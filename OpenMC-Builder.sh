@@ -252,14 +252,24 @@ make install
 ###############################################################
 
 cd ${hdf5dir_build}
-${hdf5dir_src}/configure --enable-shared CPPFLAGS="-I${compile_out_serial}/include" LDFLAGS="-L${compile_out_serial}/lib" --enable-fortran --enable-cxx --prefix=${compile_out_serial}
+${hdf5dir_src}/configure \
+    --enable-shared \
+    CPPFLAGS="-I${compile_out_serial}/include" \
+    LDFLAGS="-L${compile_out_serial}/lib" \
+    --enable-fortran --enable-cxx \
+    --prefix=${compile_out_serial}
 make -j${jobs}
 make install
 
 # It is not clear if the --disable-hl flag should be used here since the high-level library does not trigger the global lock. However, the high-level library is required by dagmc.
 # I'll assume here that the codes and libraries compiled in this script are engineered to avoid simultaneous access.
 cd ${hdf5dir_build_parallel}
-CC=${compile_out_mpi}/bin/mpicc ${hdf5dir_src}/configure --enable-shared CPPFLAGS="-I${compile_out_mpi}/include" LDFLAGS="-L${compile_out_mpi}/lib" --enable-parallel --prefix=${compile_out_mpi}
+CC=${compile_out_mpi}/bin/mpicc ${hdf5dir_src}/configure \
+    --enable-shared \
+    CPPFLAGS="-I${compile_out_mpi}/include" \
+    LDFLAGS="-L${compile_out_mpi}/lib" \
+    --enable-parallel \
+    --prefix=${compile_out_mpi}
 make -j${jobs}
 make install
 
@@ -292,12 +302,26 @@ cd ${moabdir_src}
 git checkout tags/${MOABtag}
 
 cd ${moabdir_build}
-cmake ${moabdir_src} -DCMAKE_PREFIX_PATH=${compile_out_serial} -DENABLE_BLASLAPACK=OFF -DENABLE_HDF5=ON -DENABLE_ZLIB=ON -DCMAKE_INSTALL_PREFIX=${compile_out_serial}
+cmake ${moabdir_src} \
+    -DCMAKE_PREFIX_PATH=${compile_out_serial} \
+    -DENABLE_BLASLAPACK=OFF \
+    -DENABLE_HDF5=ON \
+    -DENABLE_ZLIB=ON \
+    -DCMAKE_INSTALL_PREFIX=${compile_out_serial}
 cmake --build . --parallel ${jobs} --config Release
 cmake --install . --config Release
 
 cd ${moabdir_build_parallel}
-cmake ${moabdir_src} -DCMAKE_PREFIX_PATH=${compile_out_mpi} -DCMAKE_C_COMPILER=${compile_out_mpi}/bin/mpicc -DCMAKE_CXX_COMPILER=${compile_out_mpi}/bin/mpicxx -DCMAKE_Fortran_COMPILER=${compile_out_mpi}/bin/mpif90 -DENABLE_BLASLAPACK=OFF -DENABLE_HDF5=ON -DENABLE_MPI=ON -DENABLE_ZLIB=ON -DCMAKE_INSTALL_PREFIX=${compile_out_mpi}
+cmake ${moabdir_src} \
+    -DCMAKE_PREFIX_PATH=${compile_out_mpi} \
+    -DCMAKE_C_COMPILER=${compile_out_mpi}/bin/mpicc \
+    -DCMAKE_CXX_COMPILER=${compile_out_mpi}/bin/mpicxx \
+    -DCMAKE_Fortran_COMPILER=${compile_out_mpi}/bin/mpif90 \
+    -DENABLE_BLASLAPACK=OFF \
+    -DENABLE_HDF5=ON \
+    -DENABLE_MPI=ON \
+    -DENABLE_ZLIB=ON \
+    -DCMAKE_INSTALL_PREFIX=${compile_out_mpi}
 cmake --build . --parallel ${jobs} --config Release
 cmake --install . --config Release
 
@@ -313,11 +337,17 @@ git submodule update --init --recursive
 
 cd ${dagmcdir_build}
 
-cmake ${dagmcdir_src} -DMOAB_DIR=${compile_out_serial} -DBUILD_TALLY=ON -DCMAKE_INSTALL_PREFIX=${compile_out_serial}
+cmake ${dagmcdir_src} \
+    -DMOAB_DIR=${compile_out_serial} \
+    -DBUILD_TALLY=ON \
+    -DCMAKE_INSTALL_PREFIX=${compile_out_serial}
 cmake --build . --parallel ${jobs} --config Release
 cmake --install . --config Release
 
-cmake ${dagmcdir_src} -DMOAB_DIR=${compile_out_mpi} -DBUILD_TALLY=ON -DCMAKE_INSTALL_PREFIX=${compile_out_mpi}
+cmake ${dagmcdir_src} \
+    -DMOAB_DIR=${compile_out_mpi} \
+    -DBUILD_TALLY=ON \
+    -DCMAKE_INSTALL_PREFIX=${compile_out_mpi}
 cmake --build . --parallel ${jobs} --config Release
 cmake --install . --config Release
 
@@ -332,12 +362,24 @@ git checkout tags/${LibMeshtag}
 git submodule update --init --recursive
 
 cd ${libmeshdir_build}
-${libmeshdir_src}/configure CPPFLAGS=-I${compile_out_serial}/include LDFLAGS=-L${compile_out_serial}/lib --disable-mpi --prefix=${compile_out_serial}
+${libmeshdir_src}/configure \
+    CPPFLAGS=-I${compile_out_serial}/include \
+    LDFLAGS=-L${compile_out_serial}/lib \
+    --disable-mpi \
+    --prefix=${compile_out_serial}
 make -j${jobs}
 make install
 
 cd ${libmeshdir_build_parallel}
-${libmeshdir_src}/configure CC=${compile_out_mpi}/bin/mpicc CXX=${compile_out_mpi}/bin/mpicxx FC=${compile_out_mpi}/bin/mpifort F77=${compile_out_mpi}/bin/mpifort CPPFLAGS=-I${compile_out_mpi}/include LDFLAGS=-L${compile_out_mpi}/lib --with-mpi=${compile_out_mpi} --prefix=${compile_out_mpi}
+${libmeshdir_src}/configure \
+    CC=${compile_out_mpi}/bin/mpicc \
+    CXX=${compile_out_mpi}/bin/mpicxx \
+    FC=${compile_out_mpi}/bin/mpifort \
+    F77=${compile_out_mpi}/bin/mpifort \
+    CPPFLAGS=-I${compile_out_mpi}/include \
+    LDFLAGS=-L${compile_out_mpi}/lib \
+    --with-mpi=${compile_out_mpi} \
+    --prefix=${compile_out_mpi}
 make -j${jobs}
 make install
 
