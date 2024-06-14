@@ -191,11 +191,11 @@ mkdir -p ${OpenMCdir_build_parallel}
 cd ${zlibdir_build}
 
 ${zlibdir_src}/configure --prefix=${compile_out_serial}
-make -j1
+make -j${jobs}
 make install
 
 ${zlibdir_src}/configure --prefix=${compile_out_mpi}
-make -j1
+make -j${jobs}
 make install
 
 ###############################################################
@@ -253,16 +253,14 @@ make install
 
 cd ${hdf5dir_build}
 ${hdf5dir_src}/configure --enable-shared CPPFLAGS="-I${compile_out_serial}/include" LDFLAGS="-L${compile_out_serial}/lib" --enable-fortran --enable-cxx --prefix=${compile_out_serial}
-# -j1 might be necessary
-make -j1
+make -j${jobs}
 make install
 
 # It is not clear if the --disable-hl flag should be used here since the high-level library does not trigger the global lock. However, the high-level library is required by dagmc.
 # I'll assume here that the codes and libraries compiled in this script are engineered to avoid simultaneous access.
 cd ${hdf5dir_build_parallel}
 CC=${compile_out_mpi}/bin/mpicc ${hdf5dir_src}/configure --enable-shared CPPFLAGS="-I${compile_out_mpi}/include" LDFLAGS="-L${compile_out_mpi}/lib" --enable-parallel --prefix=${compile_out_mpi}
-# -j1 might be necessary
-make -j1
+make -j${jobs}
 make install
 
 ###############################################################
