@@ -405,7 +405,6 @@ pip3 install --no-cache-dir --no-binary=all uncertainties
 pip3 install --no-cache-dir --no-binary=all lxml
 
 # Optionals
-env MPICC=${compile_out_serial}/bin/mpicc pip3 install --no-cache-dir --no-binary=all mpi4py
 pip3 install --no-cache-dir --no-binary=all Cython
 pip3 install --no-cache-dir --no-binary=all vtk
 pip3 install --no-cache-dir --no-binary=all pytest
