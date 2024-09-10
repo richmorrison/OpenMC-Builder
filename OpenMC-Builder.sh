@@ -19,7 +19,7 @@ LibAECtag=v1.1.3
 
 LibPNGlink=https://download.sourceforge.net/libpng/libpng-1.6.43.tar.gz
 
-MPICHlink=https://www.mpich.org/static/downloads/4.2.1/mpich-4.2.1.tar.gz
+MPICHlink=https://www.mpich.org/static/downloads/4.2.2/mpich-4.2.2.tar.gz
 
 HDF5link=https://github.com/HDFGroup/hdf5/releases/download/hdf5_1.14.4.3/hdf5-1.14.4-3.tar.gz
 
@@ -36,7 +36,7 @@ LibMeshlink=https://github.com/libMesh/libmesh.git
 LibMeshtag=v1.7.1
 
 OpenMClink=https://github.com/openmc-dev/openmc.git
-OpenMCtag=v0.14.0
+OpenMCtag=v0.15.0
 
 nuclear_data_links=(
   https://anl.box.com/shared/static/9igk353zpy8fn9ttvtrqgzvw1vtejoz6.xz
@@ -53,8 +53,11 @@ nuclear_data_links=(
 jobs=4
 
 topDir=`pwd`
-compile_out_serial=${topDir}/serial
-compile_out_mpi=${topDir}/mpi
+
+install=${topDir}/install
+install_serial=${install}_serial
+install_mpi=${install}_mpi
+
 srcDir=${topDir}/src
 buildDir=${topDir}/build
 
@@ -71,8 +74,9 @@ nuc_lib_dir=${topDir}/nuclear_data
 #
 ###############################################################
 
-mkdir -p ${compile_out_serial}
-mkdir -p ${compile_out_mpi}
+mkdir -p ${install}
+mkdir -p ${install_serial}
+mkdir -p ${install_mpi}
 mkdir -p ${srcDir}
 mkdir -p ${buildDir}
 mkdir -p ${nuc_lib_dir}
@@ -150,6 +154,7 @@ moabdir_build_parallel=${buildDir}/${moabdir}${build_parallel_suffix}
 dagmcdir=DAGMC
 dagmcdir_src=${srcDir}/${dagmcdir}
 dagmcdir_build=${buildDir}/${dagmcdir}
+dagmcdir_build_parallel=${buildDir}/${dagmcdir}${build_parallel_suffix}
 
 libmeshdir=libmesh
 libmeshdir_src=${srcDir}/${libmeshdir}
@@ -177,6 +182,7 @@ mkdir -p ${eigen3dir_build}
 mkdir -p ${moabdir_build}
 mkdir -p ${moabdir_build_parallel}
 mkdir -p ${dagmcdir_build}
+mkdir -p ${dagmcdir_build_parallel}
 mkdir -p ${libmeshdir_build}
 mkdir -p ${libmeshdir_build_parallel}
 mkdir -p ${OpenMCdir_build}
@@ -190,11 +196,8 @@ mkdir -p ${OpenMCdir_build_parallel}
 
 cd ${zlibdir_build}
 
-${zlibdir_src}/configure --prefix=${compile_out_serial}
-make -j${jobs}
-make install
+${zlibdir_src}/configure --prefix=${install}
 
-${zlibdir_src}/configure --prefix=${compile_out_mpi}
 make -j${jobs}
 make install
 
@@ -209,11 +212,7 @@ git checkout tags/${LibAECtag}
 
 cd ${libaecdir_build}
 
-cmake ${libaecdir_src} -DCMAKE_INSTALL_PREFIX=${compile_out_serial}
-cmake --build . --parallel ${jobs} --config Release
-cmake --install . --config Release
-
-cmake ${libaecdir_src} -DCMAKE_INSTALL_PREFIX=${compile_out_mpi}
+cmake ${libaecdir_src} -DCMAKE_PREFIX_PATH=${install} -DCMAKE_INSTALL_PREFIX=${install}
 cmake --build . --parallel ${jobs} --config Release
 cmake --install . --config Release
 
@@ -225,11 +224,11 @@ cmake --install . --config Release
 
 cd ${libpngdir_build}
 
-${libpngdir_src}/configure --prefix=${compile_out_serial}
-make -j${jobs}
-make install
-
-${libpngdir_src}/configure --prefix=${compile_out_mpi}
+${libpngdir_src}/configure \
+    CPPFLAGS="-I${install}/include" \
+    LDFLAGS="-L${install}/lib" \
+    --prefix=${install}
+     
 make -j${jobs}
 make install
 
@@ -241,7 +240,10 @@ make install
 
 cd ${mpichdir_build}
 
-${mpichdir_src}/configure CPPFLAGS="-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64" --prefix=${compile_out_mpi}
+${mpichdir_src}/configure \
+    CPPFLAGS="-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -I${install}/include" \
+    LDFLAGS="-L${install}/lib" \
+    --prefix=${install_mpi}
 make -j${jobs}
 make install
 
@@ -254,22 +256,22 @@ make install
 cd ${hdf5dir_build}
 ${hdf5dir_src}/configure \
     --enable-shared \
-    CPPFLAGS="-I${compile_out_serial}/include" \
-    LDFLAGS="-L${compile_out_serial}/lib" \
+    CPPFLAGS="-I${install}/include" \
+    LDFLAGS="-L${install}/lib" \
     --enable-fortran --enable-cxx \
-    --prefix=${compile_out_serial}
+    --prefix=${install_serial}
 make -j${jobs}
 make install
 
 # It is not clear if the --disable-hl flag should be used here since the high-level library does not trigger the global lock. However, the high-level library is required by dagmc.
 # I'll assume here that the codes and libraries compiled in this script are engineered to avoid simultaneous access.
 cd ${hdf5dir_build_parallel}
-CC=${compile_out_mpi}/bin/mpicc ${hdf5dir_src}/configure \
+CC=${install_mpi}/bin/mpicc ${hdf5dir_src}/configure \
     --enable-shared \
-    CPPFLAGS="-I${compile_out_mpi}/include" \
-    LDFLAGS="-L${compile_out_mpi}/lib" \
+    CPPFLAGS="-I${install}/include -I${install_mpi}/include" \
+    LDFLAGS="-L${install}/lib -L${install_mpi}/lib" \
     --enable-parallel \
-    --prefix=${compile_out_mpi}
+    --prefix=${install_mpi}
 make -j${jobs}
 make install
 
@@ -284,11 +286,7 @@ git checkout tags/${Eigen3tag}
 
 cd ${eigen3dir_build}
 
-cmake ${eigen3dir_src} -DCMAKE_INSTALL_PREFIX=${compile_out_serial}
-cmake --build . --parallel ${jobs} --config Release
-cmake --install . --config Release
-
-cmake ${eigen3dir_src} -DCMAKE_INSTALL_PREFIX=${compile_out_mpi}
+cmake ${eigen3dir_src} -DCMAKE_INSTALL_PREFIX=${install}
 cmake --build . --parallel ${jobs} --config Release
 cmake --install . --config Release
 
@@ -303,25 +301,25 @@ git checkout tags/${MOABtag}
 
 cd ${moabdir_build}
 cmake ${moabdir_src} \
-    -DCMAKE_PREFIX_PATH=${compile_out_serial} \
+    -DCMAKE_PREFIX_PATH=${install}\;${install_serial} \
     -DENABLE_BLASLAPACK=OFF \
     -DENABLE_HDF5=ON \
     -DENABLE_ZLIB=ON \
-    -DCMAKE_INSTALL_PREFIX=${compile_out_serial}
+    -DCMAKE_INSTALL_PREFIX=${install_serial}
 cmake --build . --parallel ${jobs} --config Release
 cmake --install . --config Release
 
 cd ${moabdir_build_parallel}
 cmake ${moabdir_src} \
-    -DCMAKE_PREFIX_PATH=${compile_out_mpi} \
-    -DCMAKE_C_COMPILER=${compile_out_mpi}/bin/mpicc \
-    -DCMAKE_CXX_COMPILER=${compile_out_mpi}/bin/mpicxx \
-    -DCMAKE_Fortran_COMPILER=${compile_out_mpi}/bin/mpif90 \
+    -DCMAKE_PREFIX_PATH=${install}\;${install_mpi} \
+    -DCMAKE_C_COMPILER=${install_mpi}/bin/mpicc \
+    -DCMAKE_CXX_COMPILER=${install_mpi}/bin/mpicxx \
+    -DCMAKE_Fortran_COMPILER=${install_mpi}/bin/mpif90 \
     -DENABLE_BLASLAPACK=OFF \
     -DENABLE_HDF5=ON \
     -DENABLE_MPI=ON \
     -DENABLE_ZLIB=ON \
-    -DCMAKE_INSTALL_PREFIX=${compile_out_mpi}
+    -DCMAKE_INSTALL_PREFIX=${install_mpi}
 cmake --build . --parallel ${jobs} --config Release
 cmake --install . --config Release
 
@@ -338,16 +336,23 @@ git submodule update --init --recursive
 cd ${dagmcdir_build}
 
 cmake ${dagmcdir_src} \
-    -DMOAB_DIR=${compile_out_serial} \
+    -DMOAB_DIR=${install_serial} \
     -DBUILD_TALLY=ON \
-    -DCMAKE_INSTALL_PREFIX=${compile_out_serial}
+    -DCMAKE_PREFIX_PATH=${install}\;${install_serial} \
+    -DCMAKE_INSTALL_PREFIX=${install_serial}
 cmake --build . --parallel ${jobs} --config Release
 cmake --install . --config Release
 
+cd ${dagmcdir_build_parallel}
+
 cmake ${dagmcdir_src} \
-    -DMOAB_DIR=${compile_out_mpi} \
+    -DCMAKE_C_COMPILER=${install_mpi}/bin/mpicc \
+    -DCMAKE_CXX_COMPILER=${install_mpi}/bin/mpicxx \
+    -DCMAKE_Fortran_COMPILER=${install_mpi}/bin/mpif90 \
+    -DMOAB_DIR=${install_mpi} \
     -DBUILD_TALLY=ON \
-    -DCMAKE_INSTALL_PREFIX=${compile_out_mpi}
+    -DCMAKE_PREFIX_PATH=${install}\;${install_mpi} \
+    -DCMAKE_INSTALL_PREFIX=${install_mpi}
 cmake --build . --parallel ${jobs} --config Release
 cmake --install . --config Release
 
@@ -363,23 +368,23 @@ git submodule update --init --recursive
 
 cd ${libmeshdir_build}
 ${libmeshdir_src}/configure \
-    CPPFLAGS=-I${compile_out_serial}/include \
-    LDFLAGS=-L${compile_out_serial}/lib \
+    CPPFLAGS="-I${install}/include -I${install_serial}/include" \
+    LDFLAGS="-L${install}/lib -L${install_serial}/lib" \
     --disable-mpi \
-    --prefix=${compile_out_serial}
+    --prefix=${install_serial}
 make -j${jobs}
 make install
 
 cd ${libmeshdir_build_parallel}
 ${libmeshdir_src}/configure \
-    CC=${compile_out_mpi}/bin/mpicc \
-    CXX=${compile_out_mpi}/bin/mpicxx \
-    FC=${compile_out_mpi}/bin/mpifort \
-    F77=${compile_out_mpi}/bin/mpifort \
-    CPPFLAGS=-I${compile_out_mpi}/include \
-    LDFLAGS=-L${compile_out_mpi}/lib \
-    --with-mpi=${compile_out_mpi} \
-    --prefix=${compile_out_mpi}
+    CC=${install_mpi}/bin/mpicc \
+    CXX=${install_mpi}/bin/mpicxx \
+    FC=${install_mpi}/bin/mpifort \
+    F77=${install_mpi}/bin/mpifort \
+    CPPFLAGS="-I${install}/include -I${install_mpi}/include" \
+    LDFLAGS="-L${install}/lib -L${install_mpi}/lib" \
+    --with-mpi=${install_mpi} \
+    --prefix=${install_mpi}
 make -j${jobs}
 make install
 
@@ -394,31 +399,27 @@ git checkout tags/${OpenMCtag}
 git submodule update --init --recursive
 
 cd ${OpenMCdir_build}
-# -DOPENMC_BUILD_TESTS=off due to compilation error
 cmake ${OpenMCdir_src} \
-    -DOPENMC_BUILD_TESTS=off \
     -DHDF5_PREFER_PARALLEL=off \
     -DOPENMC_USE_DAGMC=on \
     -DOPENMC_USE_LIBMESH=on \
     -DOPENMC_USE_OPENMP=off \
     -DOPENMC_USE_MPI=off \
-    -DCMAKE_PREFIX_PATH=${compile_out_serial} \
-    -DCMAKE_INSTALL_PREFIX=${compile_out_serial}
+    -DCMAKE_PREFIX_PATH=${install}\;${install_serial} \
+    -DCMAKE_INSTALL_PREFIX=${install_serial}
 cmake --build . --parallel ${jobs} --config Release
 cmake --install . --config Release
 
 cd ${OpenMCdir_build_parallel}
-# -DOPENMC_BUILD_TESTS=off due to compilation error
 cmake ${OpenMCdir_src} \
-    -DOPENMC_BUILD_TESTS=off \
     -DHDF5_PREFER_PARALLEL=on \
     -DOPENMC_USE_DAGMC=on \
     -DOPENMC_USE_LIBMESH=on \
     -DOPENMC_USE_OPENMP=on \
     -DOPENMC_USE_MPI=on \
-    -DCMAKE_CXX_COMPILER=${compile_out_mpi}/bin/mpicxx \
-    -DCMAKE_PREFIX_PATH=${compile_out_mpi} \
-    -DCMAKE_INSTALL_PREFIX=${compile_out_mpi}
+    -DCMAKE_CXX_COMPILER=${install_mpi}/bin/mpicxx \
+    -DCMAKE_PREFIX_PATH=${install}\;${install_mpi} \
+    -DCMAKE_INSTALL_PREFIX=${install_mpi}
 cmake --build . --parallel ${jobs} --config Release
 cmake --install . --config Release
 
@@ -439,7 +440,7 @@ pip3 install wheel
 pip3 install --no-cache-dir --no-binary=all NumPy
 pip3 install --no-cache-dir --no-binary=all SciPy
 pip3 install --no-cache-dir --no-binary=all pandas
-env HDF5_DIR=${compile_out_serial} HDF5_MPI=OFF pip3 install --no-cache-dir --no-binary=all h5py
+env HDF5_DIR=${install_serial} HDF5_MPI=OFF pip3 install --no-cache-dir --no-binary=all h5py
 pip3 install --no-cache-dir --no-binary=all matplotlib
 pip3 install --no-cache-dir --no-binary=all uncertainties
 pip3 install --no-cache-dir --no-binary=all lxml
@@ -451,11 +452,11 @@ pip3 install --no-cache-dir --no-binary=all pytest
 
 cd ${OpenMCdir_src}
 
-env HDF5_DIR=${compile_out_serial} HDF5_MPI=OFF pip3 install --no-cache-dir --no-binary=all .
+env HDF5_DIR=${install_serial} HDF5_MPI=OFF pip3 install --no-cache-dir --no-binary=all .
 
 deactivate
 
-ln -s ${compile_out_serial}/bin/openmc ${pythonvenv_serial}/bin
+ln -s ${install_serial}/bin/openmc ${pythonvenv_serial}/bin
 
 # Create venv with parallel HDF5
 
@@ -468,24 +469,24 @@ pip3 install wheel
 pip3 install --no-cache-dir --no-binary=all NumPy
 pip3 install --no-cache-dir --no-binary=all SciPy
 pip3 install --no-cache-dir --no-binary=all pandas
-env HDF5_DIR=${compile_out_mpi} HDF5_MPI=ON pip3 install --no-cache-dir --no-binary=all h5py
+env HDF5_DIR=${install_mpi} HDF5_MPI=ON pip3 install --no-cache-dir --no-binary=all h5py
 pip3 install --no-cache-dir --no-binary=all matplotlib
 pip3 install --no-cache-dir --no-binary=all uncertainties
 pip3 install --no-cache-dir --no-binary=all lxml
 
 # Optionals
-env MPICC=${compile_out_mpi}/bin/mpicc pip3 install --no-cache-dir --no-binary=all mpi4py
+env MPICC=${install_mpi}/bin/mpicc pip3 install --no-cache-dir --no-binary=all mpi4py
 pip3 install --no-cache-dir --no-binary=all Cython
 pip3 install --no-cache-dir --no-binary=all vtk
 pip3 install --no-cache-dir --no-binary=all pytest
 
 cd ${OpenMCdir_src}
 
-env HDF5_DIR=${compile_out_mpi} HDF5_MPI=ON pip3 install --no-cache-dir --no-binary=all .
+env HDF5_DIR=${install_mpi} HDF5_MPI=ON pip3 install --no-cache-dir --no-binary=all .
 
 deactivate
 
-ln -s ${compile_out_mpi}/bin/openmc ${pythonvenv_parallel}/bin
+ln -s ${install_mpi}/bin/openmc ${pythonvenv_parallel}/bin
 
 ###############################################################
 #
